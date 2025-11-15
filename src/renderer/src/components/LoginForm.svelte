@@ -1,14 +1,19 @@
 <script lang="ts">
+    import { login, authStore } from '../stores/Auth.svelte'
+
     let username = ''
     let password = ''
 
     async function handleSubmit(): Promise<void> {
-        const result = await window.api.authenticateUserByName(username, password)
-        console.log(result)
+        return await login(username, password)
+            .catch((e) => console.log('catch', e))
+            .then((e) => console.log('then', e))
+            .finally(() => console.log('finally'))
     }
 </script>
 
 <form on:submit|preventDefault={handleSubmit}>
+    <p>user: {authStore.User?.Name}</p>
     <input type="text" bind:value={username} />
     <input type="password" bind:value={password} />
     <button type="submit">Login</button>

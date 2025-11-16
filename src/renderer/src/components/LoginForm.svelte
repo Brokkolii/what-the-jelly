@@ -1,23 +1,33 @@
 <script lang="ts">
-    import { login, authStore } from '../stores/Auth.svelte'
+    import type { JellyfinAuthResponse } from '../../../shared/types/jellyfin'
+    import { login } from '../stores/auth'
 
     let username = ''
     let password = ''
+    let auth: Promise<JellyfinAuthResponse> | null = null
 
     async function handleSubmit(): Promise<void> {
-        return await login(username, password)
-            .catch((e) => console.log('catch', e))
-            .then((e) => console.log('then', e))
-            .finally(() => console.log('finally'))
+        // TODO catch error and handle loading
+        auth = login(username, password)
     }
 </script>
 
-<form on:submit|preventDefault={handleSubmit}>
-    <p>user: {authStore.User?.Name}</p>
-    <input type="text" bind:value={username} />
-    <input type="password" bind:value={password} />
-    <button type="submit">Login</button>
-</form>
+{#if !auth}
+    <form onsubmit={handleSubmit}>
+        <input type="text" bind:value={username} />
+        <input type="password" bind:value={password} />
+        <button type="submit">Login</button>
+    </form>
+{:else}
+    {#await auth}
+        loading
+    {:then auth}
+        logged in as {auth.User.Name}
+    {:catch err}
+        {err}
+        <button onclick={() => (auth = null)}>retry</button>
+    {/await}
+{/if}
 
 <style>
     form {

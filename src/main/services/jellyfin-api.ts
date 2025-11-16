@@ -1,19 +1,54 @@
-import { config } from '../config'
+import { app } from 'electron'
+import { config, saveConfig } from '../config'
+import { platform } from 'os'
+import { randomUUID } from 'crypto'
+import { JellyfinAuthResponse } from '../../shared/types/jellyfin'
 
-export class JellyfinApi {
-  private baseUrl = config.jellyfin.baseUrl
+class JellyfinApi {
+    // TODO develop process for setting base url
+    private baseUrl = config?.jellyfin?.baseUrl
+    private accessToken: string | null = null
 
-  async authenticateUserByName(username: string, password: string) {
-    console.log(username, password)
-    const response = await fetch(`${this.baseUrl}/Users/AuthenticateByName`, {
-      method: 'POST',
-      // TODO: proper deviceId and Version also add Token="xxx" for auth to Auth header
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'MediaBrowser Client="WhatTheJelly", Device="Electron", DeviceId="unique-id-123", Version="0.1.0"' },
-      body: JSON.stringify({ Username: username, Pw: password })
-    })
-    console.log(response)
-    return response.json()
-  }
+    public async authenticateUserByName(
+        username: string,
+        password: string
+    ): Promise<JellyfinAuthResponse> {
+        const response = await fetch(`${this.baseUrl}/Users/AuthenticateByName`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: this.getAuthHeader()
+            },
+            body: JSON.stringify({ Username: username, Pw: password })
+        })
+        if (response.status !== 200) {
+            console.error(response.status, response.statusText)
+            throw new Error(`Authentication failed (${response.status} ${response.statusText})`)
+        } else {
+            const result: Promise<JellyfinAuthResponse> = response.json()
+            return result
+        }
+    }
+
+    private getAuthHeader(): string {
+        const client = 'WhatTheJelly'
+        const device = platform()
+        const deviceId = this.getOrCreateDeviceId()
+        const version = app.getVersion()
+        const accessToken = this.accessToken
+        if (accessToken) {
+            return `MediaBrowser Client="${client}", Device="${device}", DeviceId="${deviceId}", Version="${version}"`
+        } else {
+            return `MediaBrowser Client="${client}", Device="${device}", DeviceId="${deviceId}", Version="${version}", Token="${accessToken}"`
+        }
+    }
+
+    private getOrCreateDeviceId(): string {
+        if (config?.deviceId) return config.deviceId
+        const deviceId = randomUUID()
+        saveConfig({ deviceId })
+        return deviceId
+    }
 }
 
 export const jellyfinApi = new JellyfinApi()

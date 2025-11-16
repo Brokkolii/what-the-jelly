@@ -1,8 +1,7 @@
 <script lang="ts">
-    import { authStore, logout } from '../stores/auth'
+    import { userStore, logout } from '../stores/auth'
 </script>
 
 <h1>Library</h1>
-<p>{$authStore.User.Name}</p>
-<p>{$authStore.AccessToken}</p>
+<p>{$userStore.Name}</p>
 <button onclick={() => logout()}>logout</button>

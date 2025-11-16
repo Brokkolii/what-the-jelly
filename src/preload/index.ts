@@ -1,11 +1,15 @@
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { JellyfinAuthResponse } from '../shared/types/jellyfin'
 
 // Custom APIs for renderer
 const api = {
-    authenticateUserByName: (username: string, password: string): Promise<JellyfinAuthResponse> =>
-        electronAPI.ipcRenderer.invoke('authenticateUserByName', username, password)
+    authenticateUserByName: (username: string, password: string) =>
+        electronAPI.ipcRenderer.invoke('authenticateUserByName', username, password),
+    hasConnectionToServer: (): Promise<boolean> =>
+        electronAPI.ipcRenderer.invoke('hasConnectionToServer'),
+    logout: () => electronAPI.ipcRenderer.invoke('logout'),
+    getUser: () => electronAPI.ipcRenderer.invoke('getUser'),
+    setBaseUrl: (baseUrl: string) => electronAPI.ipcRenderer.invoke('setBaseUrl', baseUrl)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

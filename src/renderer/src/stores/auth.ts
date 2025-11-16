@@ -1,28 +1,21 @@
-import { derived, writable } from 'svelte/store'
-import type { JellyfinAuthResponse } from '../../../shared/types/jellyfin'
+import { writable } from 'svelte/store'
+import type { JellyfinUser } from '../../../shared/types/jellyfin'
 
-export const authStore = writable<JellyfinAuthResponse>({
-    AccessToken: null,
-    ServerId: null,
-    SessionInfo: null,
-    User: null
-})
-
-// can no export derived
-export const isLoggedIn = derived(authStore, ($auth) => !!$auth?.AccessToken)
+export const userStore = writable<JellyfinUser | null>(null)
 
 export async function login(username: string, password: string) {
-    const result = await window.api.authenticateUserByName(username, password)
-    authStore.set(result)
-    return result
+    const user = await window.api.authenticateUserByName(username, password)
+    userStore.set(user)
+    return user
 }
 
-export function logout() {
-    // TODO: clear persisted accessToken
-    authStore.update((auth) => {
-        auth.AccessToken = null
-        auth.SessionInfo = null
-        auth.User = null
-        return auth
-    })
+export async function getUser() {
+    const user = await window.api.getUser()
+    userStore.set(user)
+    return user
+}
+
+export async function logout() {
+    await window.api.logout()
+    userStore.set(null)
 }

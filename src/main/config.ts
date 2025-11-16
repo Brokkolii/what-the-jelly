@@ -7,9 +7,7 @@ const configPath = path.join(app.getPath('userData'), 'config.json')
 
 const defaultConfig: AppConfig = {
     deviceId: null,
-    jellyfin: {
-        baseUrl: null
-    }
+    baseUrl: null
 }
 
 function loadConfig(): AppConfig {

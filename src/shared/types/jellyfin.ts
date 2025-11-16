@@ -1,11 +1,11 @@
 export type JellyfinAuthResponse = {
-    AccessToken: string | null
-    ServerId: string | null
-    SessionInfo: JellyfinSessionInfo | null
-    User: JellyfinUser | null
+    AccessToken: string
+    ServerId: string
+    SessionInfo: JellyfinSessionInfo
+    User: JellyfinUser
 }
 
-type JellyfinUser = {
+export type JellyfinUser = {
     Id: string
     Name: string
 }

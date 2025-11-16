@@ -1,30 +1,27 @@
 <script lang="ts">
-    import type { JellyfinUser } from '../../../shared/types/jellyfin'
-    import { login } from '../stores/auth'
+    import { setBaseUrl } from '../stores/server'
 
-    let username = ''
-    let password = ''
-    let user: Promise<JellyfinUser> | null = null
+    let baseUrl = ''
+    let server: Promise<void> | null = null
 
-    function handleSubmit(): void {
+    async function handleSubmit(): Promise<void> {
         // TODO catch error and handle loading
-        user = login(username, password)
+        server = setBaseUrl(baseUrl)
     }
 </script>
 
-{#if !user}
+{#if !server}
     <form onsubmit={handleSubmit}>
-        <h1>Login</h1>
-        <input type="text" bind:value={username} />
-        <input type="password" bind:value={password} />
-        <button type="submit">Login</button>
+        <h1>Server</h1>
+        <input type="text" bind:value={baseUrl} />
+        <button type="submit">Set BaseUrl</button>
     </form>
 {:else}
-    {#await user}
+    {#await server}
         loading
     {:catch err}
         {err}
-        <button onclick={() => (user = null)}>retry</button>
+        <button onclick={() => (server = null)}>retry</button>
     {/await}
 {/if}
 

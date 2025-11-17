@@ -3,18 +3,18 @@ import { config, saveConfig } from '../config'
 import { platform } from 'os'
 import { randomUUID } from 'crypto'
 import { JellyfinAuthResponse, JellyfinUser } from '../../shared/types/jellyfin'
+import { deletePassword, getPassword, setPassword } from 'keytar'
 
 class JellyfinApi {
     // TODO develop process for setting base url
     private baseUrl = config?.baseUrl
-    private accessToken: string | null = null
 
     public async authenticateUserByName(username: string, password: string): Promise<JellyfinUser> {
         const response = await fetch(`${this.baseUrl}/Users/AuthenticateByName`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: this.getAuthHeader()
+                Authorization: await this.getAuthHeader()
             },
             body: JSON.stringify({ Username: username, Pw: password })
         })
@@ -23,18 +23,18 @@ class JellyfinApi {
             throw new Error(`Authentication failed (${response.status} ${response.statusText})`)
         } else {
             const result: JellyfinAuthResponse = await response.json()
-            // TODO save auth token
+            this.saveAccessToken(result.AccessToken)
             return result.User
         }
     }
 
-    private getAuthHeader(): string {
-        const client = 'WhatTheJelly'
+    private async getAuthHeader(): Promise<string> {
+        const client = 'what-the-jelly'
         const device = platform()
         const deviceId = this.getOrCreateDeviceId()
         const version = app.getVersion()
-        const accessToken = this.accessToken
-        if (accessToken) {
+        const accessToken = await this.loadAccessToken()
+        if (!accessToken) {
             return `MediaBrowser Client="${client}", Device="${device}", DeviceId="${deviceId}", Version="${version}"`
         } else {
             return `MediaBrowser Client="${client}", Device="${device}", DeviceId="${deviceId}", Version="${version}", Token="${accessToken}"`
@@ -48,9 +48,17 @@ class JellyfinApi {
         return deviceId
     }
 
+    private async saveAccessToken(accessToken: string) {
+        await setPassword('what-the-jelly', 'access-token', accessToken)
+    }
+
+    private async loadAccessToken() {
+        const accessToken = await getPassword('what-the-jelly', 'access-token')
+        return accessToken
+    }
+
     public async logout(): Promise<void> {
-        // TODO remove authToken
-        // TODO sessions/logout
+        await deletePassword('what-the-jelly', 'access-token')
     }
 
     public async hasConnectionToServer(): Promise<boolean> {
@@ -59,7 +67,7 @@ class JellyfinApi {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: this.getAuthHeader()
+                    Authorization: await this.getAuthHeader()
                 }
             })
             return response.status === 200
@@ -69,11 +77,11 @@ class JellyfinApi {
     }
 
     public async getUser(): Promise<JellyfinUser | null> {
-        const response = await fetch(`${this.baseUrl}/User/Me`, {
+        const response = await fetch(`${this.baseUrl}/Users/Me`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: this.getAuthHeader()
+                Authorization: await this.getAuthHeader()
             }
         })
         if (response.status !== 200) {
@@ -90,7 +98,7 @@ class JellyfinApi {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: this.getAuthHeader()
+                    Authorization: await this.getAuthHeader()
                 }
             })
             if (response.status === 200) {

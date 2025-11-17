@@ -1,21 +1,30 @@
 <script lang="ts">
-    import { onMount } from 'svelte'
     import Library from './components/Library.svelte'
     import Onboarding from './components/Onboarding.svelte'
-    import { userStore } from './stores/auth'
     import { checkConnectionToServer } from './stores/server'
-    import { getUser } from './stores/auth'
+    import { getUser, userStore } from './stores/auth'
+    import type { JellyfinUser } from '../../shared/types/jellyfin'
 
-    onMount(async () => {
+    const initialising: Promise<JellyfinUser | null> = initializeServerAndUser()
+
+    async function initializeServerAndUser(): Promise<JellyfinUser | null> {
         const connection = await checkConnectionToServer()
         if (connection) {
-            await getUser()
+            return await getUser()
+        } else {
+            return null
         }
-    })
+    }
 </script>
 
-{#if $userStore}
-    <Library />
-{:else}
-    <Onboarding />
-{/if}
+{#await initialising}
+    loading
+{:then}
+    {#if $userStore}
+        <Library />
+    {:else}
+        <Onboarding />
+    {/if}
+{:catch err}
+    {err}
+{/await}
